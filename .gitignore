@@ -1,0 +1,7 @@
+/target
+*.gfa
+*.txt
+*.json
+/dev
+*.tsv
+*.log
