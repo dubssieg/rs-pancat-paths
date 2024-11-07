@@ -1,5 +1,5 @@
 [package]
-name = "rs-stats-paths"
+name = "rs-pangenome-paths"
 version = "0.1.0"
 edition = "2021"
 
