@@ -1,3 +1,5 @@
+mod anchor;
+mod converter;
 mod index_gfa_file;
 mod sharepg;
 use clap::Parser;
@@ -13,12 +15,18 @@ struct Cli {
     /// Query intervals that are included in the given paths
     #[arg(short = 'i', long = "include")]
     include: Vec<String>,
+    /// Convert to rGFA using the reference as a backbone for the offset tree.
+    #[arg(short = 'R', long = "rgfa")]
+    rgfa_reference: Option<String>,
     /// Query intervals that are excluded from the given paths
     #[arg(short = 'e', long = "exclude")]
     exclude: Vec<String>,
     /// Sensitivity ratio for the query intervals (from 0.0 to 1.0)
     #[arg(short = 's', long = "sensitivity", default_value_t = 1.0)]
     sensitivity: f64,
+    /// Search for anchor nodes
+    #[arg(short = 'a', long = "anchor")]
+    anchor: Option<i32>,
 }
 
 fn main() {
@@ -47,6 +55,10 @@ fn main() {
             &args.exclude,
             args.sensitivity,
         );
+    } else if args.anchor.is_some() {
+        let _ = anchor::anchor_nodes(&args.file_path, args.anchor);
+    } else if let Some(rgfa_reference) = &args.rgfa_reference {
+        let _ = converter::gfa_to_rgfa(&args.file_path, rgfa_reference);
     } else {
         // If the rename option is not given, index the paths
         let _ = index_gfa_file::index_gfa(&args.file_path);
