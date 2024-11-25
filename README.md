@@ -14,7 +14,7 @@ Requires rust and cargo.
 
 ```bash
 git clone 
-cd rs-pancat-compare
+cd rs-pancat-paths
 cargo build --release
 ```
 
@@ -50,3 +50,21 @@ Extracts presence-absence of paths crossing nodes of the graph as presence vecto
 
 > [!NOTE]\
 > Want to contribute? Feel free to open a PR on an issue about a missing, buggy or incomplete feature! **Please do bug reports in the issue tracker!**.
+
+### GFA1 to rGFA
+
+```bash
+rs-pancat-paths graph.gfa -R reference > output.gfa
+```
+
+Builds a offset tree using `reference` as backbone, and uses it to compute rGFA supplementary tags.
+
+
+### Anchor nodes
+
+Anchor nodes are nodes that are shared by at least $n$ paths. Anchor rank is the number of paths crossing a single node (whitout cycles)
+It is helpful to find candidates sources and sink, pivot points, tree roots, highly conserved regions...
+
+```bash
+rs-pancat-paths graph.gfa -a n > output.tsv
+```
