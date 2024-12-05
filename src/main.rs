@@ -27,6 +27,9 @@ struct Cli {
     /// Search for anchor nodes
     #[arg(short = 'a', long = "anchor")]
     anchor: Option<i32>,
+    /// Computes offsets of the nodes in the graph
+    #[clap(long = "index", short = 'I', action)]
+    index: bool,
 }
 
 fn main() {
@@ -59,6 +62,8 @@ fn main() {
         let _ = anchor::anchor_nodes(&args.file_path, args.anchor);
     } else if let Some(rgfa_reference) = &args.rgfa_reference {
         let _ = converter::gfa_to_rgfa(&args.file_path, rgfa_reference);
+    } else if args.index {
+        let _ = index_gfa_file::offset_gfa(&args.file_path);
     } else {
         // If the rename option is not given, index the paths
         let _ = index_gfa_file::index_gfa(&args.file_path);
