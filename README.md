@@ -68,3 +68,11 @@ It is helpful to find candidates sources and sink, pivot points, tree roots, hig
 ```bash
 rs-pancat-paths graph.gfa -a n > output.tsv
 ```
+
+### Get the offset of nodes
+
+Returns a tab-separated file that contains information about positions of the nodes in the genomes.
+
+```bash
+rs-pancat-paths graph.gfa -I > output.tsv
+```
