@@ -1,7 +1,12 @@
 mod anchor;
 mod converter;
+mod find_inversions;
 mod index_gfa_file;
+mod mask_paths;
+mod remove_loops;
 mod sharepg;
+mod simplify_graph;
+mod spurious;
 use clap::Parser;
 
 #[derive(Parser, Debug)]
@@ -30,6 +35,21 @@ struct Cli {
     /// Computes offsets of the nodes in the graph
     #[clap(long = "index", short = 'I', action)]
     index: bool,
+    /// Computes a simplified version of the graph
+    #[clap(long = "simplify", short = 'S', action)]
+    simplify: bool,
+    /// Computes spurious breakpoints in the graph
+    #[clap(long = "spurious", short = 'B', action)]
+    spurious: bool,
+    /// Computes lengths of the nodes in the graph
+    #[clap(long = "lengths", short = 'L', action)]
+    lengths: bool,
+    /// Computes a simplified version of the graph
+    #[clap(long = "loops", short = 'l', action)]
+    loops: bool,
+    /// Filter the paths to be removed from the graph
+    #[clap(long = "mask", short = 'M', action)]
+    mask: Vec<String>,
 }
 
 fn main() {
@@ -64,6 +84,19 @@ fn main() {
         let _ = converter::gfa_to_rgfa(&args.file_path, rgfa_reference);
     } else if args.index {
         let _ = index_gfa_file::offset_gfa(&args.file_path);
+    } else if args.lengths {
+        let _ = index_gfa_file::lengths_gfa(&args.file_path);
+    } else if args.simplify {
+        let _ = simplify_graph::simplify_graph(&args.file_path);
+    } else if args.spurious {
+        let _ = index_gfa_file::find_spurious_breakpoints(&args.file_path);
+    } else if args.loops {
+        let _ = remove_loops::remove_loops(&args.file_path, 2);
+    } else if !args.mask.is_empty() {
+        let _ = mask_paths::mask_paths(
+            &args.file_path,
+            args.mask.iter().map(String::as_str).collect(),
+        );
     } else {
         // If the rename option is not given, index the paths
         let _ = index_gfa_file::index_gfa(&args.file_path);
