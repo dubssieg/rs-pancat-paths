@@ -8,4 +8,5 @@ edition = "2021"
 [dependencies]
 flate2 = "1.0.33"
 indexmap = "2.6.0"
+petgraph = "0.7.1"
 clap = { version = "4.0", features = ["derive"] }
