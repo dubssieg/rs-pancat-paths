@@ -76,3 +76,14 @@ Returns a tab-separated file that contains information about positions of the no
 ```bash
 rs-pancat-paths graph.gfa -I > output.tsv
 ```
+
+### Remove genomes in the graph
+
+Removes paths, edges and nodes that are irrelevant once these paths have been removed from the graph.
+
+```bash
+rs-pancat-paths graph.gfa -M PathName > output.gfa
+# You can remove multiple paths by providing multiple names :
+rs-pancat-paths graph.gfa -M PathName1 -M PathName2 > output.gfa
+```
+Does not modify the topology of the graph! You may create spurious breakpoints by removing elements from the graph.
