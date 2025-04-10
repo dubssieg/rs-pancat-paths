@@ -1,6 +1,5 @@
 mod anchor;
 mod converter;
-mod find_inversions;
 mod index_gfa_file;
 mod mask_paths;
 mod remove_loops;
