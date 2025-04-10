@@ -2,6 +2,52 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
 
+pub fn find_spurious_breakpoints(file_path: &str) -> io::Result<()> {
+    /*
+    Given a file path, this function reads the GFA file and returns a HashMap:
+    - spurious_nodes: a vector of spurious node IDs as values
+    */
+    let file: File = File::open(file_path)?;
+    let mut reader: BufReader<File> = BufReader::new(file);
+    let mut seq_successors: HashMap<String, Vec<String>> = HashMap::new();
+
+    let mut line: String = String::new();
+    while reader.read_line(&mut line)? > 0 {
+        let columns: Vec<&str> = line.split('\t').collect();
+        if let Some(first_char) = line.chars().next() {
+            if first_char == 'E' {
+                // In the case of an E-line, we store the predecessor and successor nodes
+                let successor: String = String::from(columns[3]);
+
+                if seq_successors.contains_key(&successor) {
+                    if seq_successors
+                        .get_mut(&successor)
+                        .unwrap()
+                        .contains(&successor)
+                    {
+                        continue;
+                    } else {
+                        seq_successors
+                            .get_mut(&successor)
+                            .unwrap()
+                            .push(successor.clone());
+                    }
+                } else {
+                    seq_successors.insert(successor.clone(), vec![successor.clone()]);
+                }
+            }
+            line.clear(); // Clear the line buffer for the next read
+        }
+    }
+    // We then search for nodes that have only one predecessor and we return them
+    for (node, successors) in seq_successors.iter() {
+        if successors.len() == 1 {
+            println!("{}", node);
+        }
+    }
+    Ok(())
+}
+
 pub fn index_gfa(file_path: &str) -> io::Result<()> {
     /*
     This function reads a GFA file and prints the length of each path
@@ -145,6 +191,30 @@ pub fn offset_gfa(file_path: &str) -> io::Result<()> {
                         orientation
                     );
                 }
+            }
+        }
+        line.clear(); // Clear the line buffer for the next read
+    }
+
+    Ok(())
+}
+
+pub fn lengths_gfa(file_path: &str) -> io::Result<()> {
+    /*
+    This function reads a GFA file and prints the length of each path
+     */
+    let file: File = File::open(file_path)?;
+    let mut reader: BufReader<File> = BufReader::new(file);
+    let mut line: String = String::new();
+
+    while reader.read_line(&mut line)? > 0 {
+        let columns: Vec<&str> = line.split('\t').collect();
+        if let Some(first_char) = line.chars().next() {
+            if first_char == 'S' {
+                // In the case of an S-line, we store the node name and the sequence length
+                let node_name: String = String::from(columns[1]);
+                let sequence_length: u64 = columns[2].trim().len() as u64;
+                println!("{}\t{}", node_name, sequence_length);
             }
         }
         line.clear(); // Clear the line buffer for the next read
