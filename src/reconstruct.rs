@@ -2,18 +2,6 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
 
-pub fn read_pathlist_file(file_path: &str) -> io::Result<Vec<String>> {
-    let file: File = File::open(file_path)?;
-    let reader: BufReader<File> = BufReader::new(file);
-    let mut path_names: Vec<String> = Vec::new();
-
-    for line in reader.lines() {
-        path_names.push(line?);
-    }
-
-    Ok(path_names)
-}
-
 pub fn reconstruct_paths(file_path: &str, path_names: Vec<&str>) -> io::Result<()> {
     /*
     Reconstruct paths in the graph as their fasta sequences
