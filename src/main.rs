@@ -1,7 +1,10 @@
 mod anchor;
+mod concatenate;
 mod converter;
 mod index_gfa_file;
 mod mask_paths;
+mod optimize;
+mod reconstruct;
 mod remove_loops;
 mod sharepg;
 mod simplify_graph;
@@ -43,12 +46,21 @@ struct Cli {
     /// Computes lengths of the nodes in the graph
     #[clap(long = "lengths", short = 'L', action)]
     lengths: bool,
+    /// Reconstruct paths from the graph
+    #[clap(long = "reconstruct", short = 'C', action)]
+    reconstruct: Vec<String>,
     /// Computes a simplified version of the graph
     #[clap(long = "loops", short = 'l', action)]
     loops: bool,
     /// Filter the paths to be removed from the graph
     #[clap(long = "mask", short = 'M', action)]
     mask: Vec<String>,
+    /// Optimize the graph, reallocating IDs of the nodes
+    #[arg(short = 'O', long = "optimize")]
+    output_mapping: Option<String>,
+    /// Concatenate graph with a second one, keeping tags.
+    #[arg(short = 'c', long = "concat")]
+    graph_to_concat: Option<String>,
 }
 
 fn main() {
@@ -77,6 +89,10 @@ fn main() {
             &args.exclude,
             args.sensitivity,
         );
+    } else if let Some(concat_file) = &args.graph_to_concat {
+        let _ = concatenate::concat_graphs(&args.file_path, &concat_file);
+    } else if let Some(mapping) = &args.output_mapping {
+        let _ = optimize::relocate_ids(&args.file_path, &mapping);
     } else if args.anchor.is_some() {
         let _ = anchor::anchor_nodes(&args.file_path, args.anchor);
     } else if let Some(rgfa_reference) = &args.rgfa_reference {
@@ -88,9 +104,14 @@ fn main() {
     } else if args.simplify {
         let _ = simplify_graph::simplify_graph(&args.file_path);
     } else if args.spurious {
-        let _ = index_gfa_file::find_spurious_breakpoints(&args.file_path);
+        let _ = spurious::find_spurious_breakpoints(&args.file_path);
     } else if args.loops {
         let _ = remove_loops::remove_loops(&args.file_path, 2);
+    } else if !args.reconstruct.is_empty() {
+        let _ = reconstruct::reconstruct_paths(
+            &args.file_path,
+            args.reconstruct.iter().map(String::as_str).collect(),
+        );
     } else if !args.mask.is_empty() {
         let _ = mask_paths::mask_paths(
             &args.file_path,
