@@ -122,19 +122,22 @@ pub fn prune_spurious_breakpoints(file_path: &str) -> io::Result<()> {
     let mut line: String = String::new();
     // We parse the lines of the file
     while reader.read_line(&mut line)? > 0 {
+        if line.ends_with('\n') {
+            line.pop();
+        }
         let columns: Vec<&str> = line.split('\t').collect();
         if let Some(first_char) = line.chars().next() {
             if first_char == 'S' {
                 let node_id: u32 = columns[1].parse::<u32>().unwrap();
                 if mapping.get(&node_id) == Some(&node_id) {
-                    println!("S\t{}\t{:?}",node_id,nodes_sequences.get(&node_id))
+                    println!("S\t{}\t{}",node_id,nodes_sequences.get(&node_id).unwrap())
                 }
             }
             else if first_char == 'L' {
                 let in_node: u32 = columns[1].parse::<u32>().unwrap();
                 let out_node: u32 = columns[3].parse::<u32>().unwrap();
-                if mapping.get(&in_node) != mapping.get(&out_node) {
-                    println!("L\t{:?}\t{}\t{:?}\t{}\t{}",mapping.get(&in_node),columns[2],mapping.get(&out_node),columns[4],columns[5])
+                if mapping.get(&in_node) != mapping.get(&out_node) || (mapping.get(&in_node) != Some(&in_node) && mapping.get(&out_node) != Some(&out_node)){
+                    println!("L\t{}\t{}\t{}\t{}\t{}",mapping.get(&in_node).unwrap(),columns[2],mapping.get(&out_node).unwrap(),columns[4],columns[5])
                 }
             }
             else if first_char == 'P' {
@@ -147,7 +150,7 @@ pub fn prune_spurious_breakpoints(file_path: &str) -> io::Result<()> {
                 println!("P\t{}\t{}\t*",columns[1],node_list.join(","));
             }
             else if first_char == 'W' {
-                let mut node_list: Vec<String> = columns[2][1..]
+                let mut node_list: Vec<String> = columns[6][1..]
                     .trim()
                     .split_inclusive(&['>', '<'][..])
                     .map(|s| s.to_string())
@@ -158,8 +161,9 @@ pub fn prune_spurious_breakpoints(file_path: &str) -> io::Result<()> {
                 println!("W\t{}\t{}\t{}\t{}\t{}\t{}",columns[1],columns[2],columns[3],columns[4],columns[5],node_list.join(""));
             }
             else {
-                print!("{}",line);
+                println!("{}",line);
             }
+        line.clear(); // Clear the line buffer for the next read
         }
     }
     Ok(())
