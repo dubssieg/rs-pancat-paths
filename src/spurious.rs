@@ -127,14 +127,14 @@ pub fn prune_spurious_breakpoints(file_path: &str) -> io::Result<()> {
             if first_char == 'S' {
                 let node_id: u32 = columns[1].parse::<u32>().unwrap();
                 if mapping.get(&node_id) == Some(&node_id) {
-                    println!("{}\t{}\t{:?}",'S',node_id,nodes_sequences.get(&node_id))
+                    println!("S\t{}\t{:?}",node_id,nodes_sequences.get(&node_id))
                 }
             }
             else if first_char == 'L' {
                 let in_node: u32 = columns[1].parse::<u32>().unwrap();
                 let out_node: u32 = columns[3].parse::<u32>().unwrap();
                 if mapping.get(&in_node) != mapping.get(&out_node) {
-                    println!("{}\t{:?}\t{}\t{:?}\t{}\t{}",'L',mapping.get(&in_node),columns[2],mapping.get(&out_node),columns[4],columns[5])
+                    println!("L\t{:?}\t{}\t{:?}\t{}\t{}",mapping.get(&in_node),columns[2],mapping.get(&out_node),columns[4],columns[5])
                 }
             }
             else if first_char == 'P' {
@@ -145,6 +145,20 @@ pub fn prune_spurious_breakpoints(file_path: &str) -> io::Result<()> {
                     .collect();
                 node_list.retain(|s| mapping.get(&(s[0..s.len() - 1].parse::<u32>().unwrap())) == Some(&(s[0..s.len() - 1].parse::<u32>().unwrap())));
                 println!("P\t{}\t{}\t*",columns[1],node_list.join(","));
+            }
+            else if first_char == 'W' {
+                let mut node_list: Vec<String> = columns[2][1..]
+                    .trim()
+                    .split_inclusive(&['>', '<'][..])
+                    .map(|s| s.to_string())
+                    .collect();
+                // we add char on first item
+                node_list[0] = String::from(columns[2].chars().nth(0).unwrap()) + &node_list[0];
+                node_list.retain(|s| mapping.get(&(s[1..].parse::<u32>().unwrap())) == Some(&(s[1..].parse::<u32>().unwrap())));
+                println!("W\t{}\t{}\t{}\t{}\t{}\t{}",columns[1],columns[2],columns[3],columns[4],columns[5],node_list.join(""));
+            }
+            else {
+                print!("{}",line);
             }
         }
     }
