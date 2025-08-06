@@ -104,7 +104,7 @@ fn main() {
     } else if args.simplify {
         let _ = simplify_graph::simplify_graph(&args.file_path);
     } else if args.spurious {
-        let _ = spurious::find_spurious_breakpoints(&args.file_path);
+        let _ = spurious::prune_spurious_breakpoints(&args.file_path);
     } else if args.loops {
         let _ = remove_loops::remove_loops(&args.file_path, 2);
     } else if !args.reconstruct.is_empty() {

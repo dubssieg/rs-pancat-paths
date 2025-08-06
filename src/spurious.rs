@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
 
-pub fn find_spurious_breakpoints(file_path: &str) -> io::Result<()> {
+pub fn prune_spurious_breakpoints(file_path: &str) -> io::Result<()> {
     /*
     Given a file path, this function reads the GFA file and returns a HashMap:
     - spurious_nodes: a vector of spurious node IDs as values
@@ -14,12 +14,24 @@ pub fn find_spurious_breakpoints(file_path: &str) -> io::Result<()> {
     // We store node IDs as signed integers, with the sign giving the reading direction
     let mut seq_successors: HashMap<i32, Vec<i32>> = HashMap::new();
     let mut seq_predecessors: HashMap<i32, Vec<i32>> = HashMap::new();
+    // mapping storage (for node IDs)
+    let mut mapping: HashMap<u32, u32> = HashMap::new();
+    let mut nodes_sequences: HashMap<u32, String> = HashMap::new();
 
     let mut line: String = String::new();
     // We parse the lines of the file
     while reader.read_line(&mut line)? > 0 {
         let columns: Vec<&str> = line.split('\t').collect();
         if let Some(first_char) = line.chars().next() {
+            if first_char == 'S' {
+                let node_id: u32 = columns[1].parse::<u32>().unwrap();
+                mapping.insert(node_id, node_id);
+                let mut sequence: String = columns[2].parse::<String>().unwrap();
+                if sequence.ends_with('\n') {
+                    sequence.pop();
+                }
+                nodes_sequences.insert(node_id, sequence);
+            }
             if first_char == 'L' {
                 // In the case of an L-line, we store the predecessor and successor nodes
                 let from_node: i32 = if columns[2] == "+" {
@@ -89,42 +101,52 @@ pub fn find_spurious_breakpoints(file_path: &str) -> io::Result<()> {
             }
         }
     }
-    print_hashset(node_pairs);
     // STEP 3: We need to merge chains of spurious
-
-    Ok(())
-}
-
-fn print_hashmap(hashmap: HashMap<i32, Vec<i32>>) {
-    for (node, labels) in hashmap.iter() {
-        print!("{}: ", node);
-        for label in labels.iter() {
-            print!("{}, ", label);
-        }
-        println!();
+    let mut pop_vect: Vec<u32> = Vec::new();
+    // easiest way is to retain a Hashmap of node IDs, change them as we go through merging
+    for pair in node_pairs.iter() {
+        // update sequence of the node and delete other node
+        let new_sequence:String = format!("{:?}{:?}",nodes_sequences.get(&pair[0]),nodes_sequences.get(&pair[1]));
+        nodes_sequences.insert(pair[0], new_sequence);
+        pop_vect.push(pair[1]);
+        nodes_sequences.remove(&pair[1]);
+        // update mapping
+        mapping.insert(pair[1], pair[0]);
     }
-}
 
-fn print_hashset(hashmap: HashSet<Vec<u32>>) {
-    for (node_pair) in hashmap.iter() {
-        print!("{:?} ", node_pair);
-    }
-    println!();
-}
-
-fn clear_spurious_breakpoints(file_path: &str) -> io::Result<()> {
-    /*
-    This function reads a GFA file and prints the length of each path
-     */
+    // STEP 4: write output file
+    // we filter nodes that no longer exists
     let file: File = File::open(file_path)?;
     let mut reader: BufReader<File> = BufReader::new(file);
-    let mut seq_lengths: HashMap<String, u64> = HashMap::new();
-    let mut line: String = String::new();
 
-    println!("The following paths are spurious breakpoints in the GFA file:");
+    let mut line: String = String::new();
+    // We parse the lines of the file
     while reader.read_line(&mut line)? > 0 {
-        // Process the line
-        line.clear(); // Clear the line buffer for the next read
+        let columns: Vec<&str> = line.split('\t').collect();
+        if let Some(first_char) = line.chars().next() {
+            if first_char == 'S' {
+                let node_id: u32 = columns[1].parse::<u32>().unwrap();
+                if mapping.get(&node_id) == Some(&node_id) {
+                    println!("{}\t{}\t{:?}",'S',node_id,nodes_sequences.get(&node_id))
+                }
+            }
+            else if first_char == 'L' {
+                let in_node: u32 = columns[1].parse::<u32>().unwrap();
+                let out_node: u32 = columns[3].parse::<u32>().unwrap();
+                if mapping.get(&in_node) != mapping.get(&out_node) {
+                    println!("{}\t{:?}\t{}\t{:?}\t{}\t{}",'L',mapping.get(&in_node),columns[2],mapping.get(&out_node),columns[4],columns[5])
+                }
+            }
+            else if first_char == 'P' {
+                let mut node_list: Vec<String> = columns[2]
+                    .trim()
+                    .split(',')
+                    .map(|s| s.to_string())
+                    .collect();
+                node_list.retain(|s| mapping.get(&(s[0..s.len() - 1].parse::<u32>().unwrap())) == Some(&(s[0..s.len() - 1].parse::<u32>().unwrap())));
+                println!("P\t{}\t{}\t*",columns[1],node_list.join(","));
+            }
+        }
     }
     Ok(())
 }
