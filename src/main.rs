@@ -48,7 +48,7 @@ struct Cli {
     lengths: bool,
     /// Reconstruct paths from the graph
     #[clap(long = "reconstruct", short = 'C', action)]
-    reconstruct: Vec<String>,
+    reconstruct: bool,
     /// Computes a simplified version of the graph
     #[clap(long = "loops", short = 'l', action)]
     loops: bool,
@@ -107,11 +107,8 @@ fn main() {
         let _ = spurious::prune_spurious_breakpoints(&args.file_path);
     } else if args.loops {
         let _ = remove_loops::remove_loops(&args.file_path, 2);
-    } else if !args.reconstruct.is_empty() {
-        let _ = reconstruct::reconstruct_paths(
-            &args.file_path,
-            args.reconstruct.iter().map(String::as_str).collect(),
-        );
+    } else if args.reconstruct {
+        let _ = reconstruct::reconstruct_paths(&args.file_path);
     } else if !args.mask.is_empty() {
         let _ = mask_paths::mask_paths(
             &args.file_path,
